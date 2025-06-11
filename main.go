@@ -15,14 +15,6 @@ import (
 	openapi "github.com/twilio/twilio-go/rest/api/v2010"
 )
 
-type User struct {
-	ID          string `json:"id"`
-	Name        string `json:"name"`
-	Email       string `json:"email"`
-	PhoneNumber string `json:"phone_number"`
-	Verified    bool   `json:"verified"`
-}
-
 type OTPRequest struct {
 	PhoneNumber string `json:"phone_number" binding:"required"`
 }
@@ -52,11 +44,6 @@ var (
 	otpStoreLock sync.RWMutex
 	twilioClient *TwilioClient
 )
-
-var users = []User{
-	{ID: "1", Name: "John Doe", Email: "john@example.com", PhoneNumber: "+911234567890", Verified: false},
-	{ID: "2", Name: "Jane Smith", Email: "jane@example.com", PhoneNumber: "+911234567891", Verified: false},
-}
 
 // Helper functions for OTP
 func generateOTP() string {
@@ -171,22 +158,6 @@ func verifyOTP(c *gin.Context) {
 		return
 	}
 
-	// Update user verification status if phone number matches
-	userFound := false
-	for i, user := range users {
-		if user.PhoneNumber == req.PhoneNumber {
-			users[i].Verified = true
-			userFound = true
-			break
-		}
-	}
-
-	if !userFound {
-		// In a real app, you might want to create a new user or handle this differently
-		c.JSON(http.StatusNotFound, gin.H{"error": "No user found with this phone number"})
-		return
-	}
-
 	// Remove OTP from store after successful verification
 	otpStoreLock.Lock()
 	delete(otpStore, req.PhoneNumber)
@@ -206,51 +177,10 @@ func main() {
 
 	r := gin.Default()
 
-	// Basic health check endpoint
-	r.GET("/health", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{"status": "ok"})
-	})
-
-	// Get all users
-	r.GET("/users", getUsers)
-
-	// Get user by ID
-	r.GET("/users/:id", getUserByID)
-
-	// Create a new user
-	r.POST("/users", createUser)
-
 	// OTP endpoints
 	r.POST("/auth/otp/request", requestOTP)
 	r.POST("/auth/otp/verify", verifyOTP)
 
 	// Start the server
 	r.Run(":8080")
-}
-
-func getUsers(c *gin.Context) {
-	c.JSON(http.StatusOK, users)
-}
-
-func getUserByID(c *gin.Context) {
-	id := c.Param("id")
-	for _, user := range users {
-		if user.ID == id {
-			c.JSON(http.StatusOK, user)
-			return
-		}
-	}
-	c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
-}
-
-func createUser(c *gin.Context) {
-	var newUser User
-	if err := c.ShouldBindJSON(&newUser); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	// In a real app, you would generate a unique ID and save to a database
-	users = append(users, newUser)
-	c.JSON(http.StatusCreated, newUser)
 }
