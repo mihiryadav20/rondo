@@ -49,7 +49,7 @@ func (tc *TwilioClient) SendOTP(phoneNumber, otp string) error {
 	params := &openapi.CreateMessageParams{}
 	params.SetTo(phoneNumber)
 	params.SetFrom(tc.FromNumber)
-	params.SetBody(fmt.Sprintf("Your verification code is: %s", otp))
+	params.SetBody(fmt.Sprintf("Hello user, the verification code is: %s", otp))
 
 	// Send the message
 	_, err := tc.Client.Api.CreateMessage(params)
