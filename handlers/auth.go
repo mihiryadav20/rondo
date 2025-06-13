@@ -64,7 +64,39 @@ func VerifyOTP(c *gin.Context) {
 		return
 	}
 
+	// Check if user exists
+	user, exists := utils.GetUserByPhone(req.PhoneNumber)
+	var token string
+	var err error
+	
+	if exists {
+		// Generate JWT token for existing user
+		token, err = utils.GenerateJWT(user)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
+			return
+		}
+	} else {
+		// For phone numbers without registered users, generate a temporary token
+		// This token will be used for registration
+		tempUser := models.User{
+			ID:    "temp_" + req.PhoneNumber,
+			Phone: req.PhoneNumber,
+		}
+		token, err = utils.GenerateJWT(tempUser)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
+			return
+		}
+	}
+
 	// Remove OTP from store after successful verification
 	utils.DeleteOTP(req.PhoneNumber)
-	c.JSON(http.StatusOK, gin.H{"message": "Phone number verified successfully"})
+	
+	response := gin.H{
+		"message": "Phone number verified successfully",
+		"token":   token,
+	}
+	
+	c.JSON(http.StatusOK, response)
 }
