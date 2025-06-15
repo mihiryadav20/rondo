@@ -34,4 +34,14 @@ func SetupRoutes(r *gin.Engine) {
 	{
 		users.GET("/:phone", handlers.GetUserProfile)
 	}
+	
+	// Game routes - protected by JWT authentication
+	games := r.Group("/games")
+	games.Use(middleware.AuthMiddleware()) // Apply JWT middleware to all game routes
+	{
+		games.POST("/create", handlers.CreateGame)
+		games.GET("/list", handlers.ListGames)
+		games.GET("/:id", handlers.GetGame)
+		games.POST("/join", handlers.JoinGame)
+	}
 }
