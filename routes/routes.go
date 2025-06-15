@@ -35,6 +35,9 @@ func SetupRoutes(r *gin.Engine) {
 		users.GET("/:phone", handlers.GetUserProfile)
 	}
 	
+	// Public game routes - no authentication required
+	r.GET("/public/games", handlers.PublicListGames)
+	
 	// Game routes - protected by JWT authentication
 	games := r.Group("/games")
 	games.Use(middleware.AuthMiddleware()) // Apply JWT middleware to all game routes

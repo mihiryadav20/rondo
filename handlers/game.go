@@ -193,3 +193,30 @@ func JoinGame(c *gin.Context) {
 		},
 	})
 }
+
+// PublicListGames returns all available games without requiring authentication
+func PublicListGames(c *gin.Context) {
+	var gameList []models.GameResponse
+	
+	for _, game := range games {
+		// Only include games that haven't started yet
+		if !game.StartTime.Before(time.Now()) {
+			gameList = append(gameList, models.GameResponse{
+				ID:                  game.ID,
+				EventName:           game.EventName,
+				StartTime:           game.StartTime,
+				EndTime:             game.EndTime,
+				Location:            game.Location,
+				CostPerPerson:       game.CostPerPerson,
+				PlayerRequirement:   game.PlayerRequirement,
+				CurrentParticipants: game.CurrentParticipants,
+				CreatorID:           game.CreatorID,
+				CreatedAt:           game.CreatedAt,
+			})
+		}
+	}
+	
+	c.JSON(http.StatusOK, models.GameListResponse{
+		Games: gameList,
+	})
+}
